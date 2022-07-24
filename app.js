@@ -7,8 +7,8 @@ const xss = require('xss-clean');
 const rateLimiter = require('express-rate-limit');
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
-const reviewRouter = require('./routes/reviewRoutes');
 const AppError = require('./utils/appError');
+const reviewRouter = require('./routes/reviewRoutes');
 const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
@@ -56,6 +56,7 @@ app.use(
 app.use(express.static(`${__dirname}/public`));
 app.use('/api/v1/tours', tourRouter); // Mounting Router
 app.use('/api/v1/users', userRouter); // Mounting Router
+app.use('/api/v1/reviews', reviewRouter);
 
 app.all('*', (req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl}`, 404));
