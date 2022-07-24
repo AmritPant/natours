@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
     },
     passwordConfirm: {
         type: String,
-        required: [true, ''],
+        required: [true, 'Please Confirm Your Password'],
         validate: {
             // This only works on .create() and .save()
             validator: function (val) {
@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema({
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    active: {
+        type: Boolean,
+        default: true,
+        select: false,
+    },
 });
 
 // Middlewares
@@ -56,6 +61,19 @@ userSchema.pre('save', async function (next) {
     // Delte the PasswordConfirm
     this.passwordConfirm = undefined;
 
+    next();
+});
+
+//  not only find but findAnd...
+userSchema.pre(/^find/, async function (next) {
+    this.find({ active: { $ne: false } });
+    next();
+});
+
+userSchema.pre('save', function (next) {
+    if (!this.isModified('password') || this.isNew) return next();
+
+    this.passwordChangedAt = Date.now() - 3000;
     next();
 });
 
