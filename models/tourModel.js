@@ -85,6 +85,29 @@ const toursSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        startLocaton: {
+            // GeoJSON
+            type: {
+                type: String,
+                default: 'Point',
+                enum: ['Point'],
+            },
+            coordinates: [Number], // longitude, latitude
+            address: String,
+            description: String,
+        },
+        locations: [
+            {
+                type: {
+                    type: String,
+                    default: 'Point',
+                    enum: ['Point'],
+                },
+                address: String,
+                description: String,
+            },
+        ],
+        guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
     },
     {
         toJSON: { virtuals: true },
@@ -96,6 +119,13 @@ toursSchema.virtual('durationWeeks').get(function () {
     return this.duration / 7;
 });
 
+// Virtual Populate
+toursSchema.virtual('reviews', {
+    ref: 'Review',
+    foreignField: 'tour',
+    localField: '_id',
+});
+
 // 4 types of middleware
 
 // Document Middleware, it runs before .save() and .create() but not .insertMany()
@@ -104,12 +134,31 @@ toursSchema.pre('save', function (next) {
     next();
 });
 
+//  JUST FOR TEST --
+// toursSchema.pre('save', async function (next) {
+//     const guidesPromises = this.guides.map(
+//         async _id => await User.findById(_id)
+//     );
+//     this.guides = await Promise.all(guidesPromises);
+//     next();
+// });
+
 //  QUERY MIDDLEWARE
 toursSchema.pre(/^find/, function (next) {
     this.find({ secretTour: { $ne: true } });
     this.start = Date.now();
     next();
 });
+
+toursSchema.pre(/^find/, function (next) {
+    this.populate({
+        path: 'guides',
+        select: '-__v  -passwordChangedAt',
+    });
+
+    next();
+});
+
 toursSchema.post(/^find/, function () {
     console.log(`The query took ${Date.now() - this.start}ms`);
 });
